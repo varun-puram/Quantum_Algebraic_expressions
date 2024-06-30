@@ -1,49 +1,57 @@
 from itertools import product
 
+# Initialize variables
 num_qubits = None
-control_target_pairs = [{} for _ in range(1000)]
-target_operations = [{} for _ in range(1000)]
-not_control = [False]*100
-gate = [{} for _ in range(100)]
-count = -1
-i = -1
-flag = False
-first = False
+control_target_pairs = [{} for _ in range(1000)]  # Pre-allocates a list of 1000 dictionaries for control-target pairs
+target_operations = [{} for _ in range(1000)]  # Similar to above, for storing operations associated with target qubits
+not_control = [False]*100  # A list to keep track of whether a particular slice includes non-control gates
+gate = [{} for _ in range(100)]  # Stores non-control gate operations and their respective qubits
+count = -1  # Counter for the number of slices processed
+i = -1  # Index for the current slice being processed
+flag = False  # Flag to track whether a new slice has been started
+first = False  # Unused variable
+
 with open("input.txt", "r") as file:
     for line in file:
         tokens = line.strip().split()
-        # print("t",tokens)
-        if line.startswith("qreg"):
+        if line.startswith("qreg"):  # Identifying the quantum register declaration
             flag = False
-            num_qubits = int(tokens[1][2:-2])
-            # print(num_qubits)
-        elif line.startswith("c"):
+            num_qubits = int(tokens[1][2:-2])  # Parses the number of qubits from the register declaration
+        elif line.startswith("c"):  # Lines starting with 'c' define control-target relationships
             flag = False
             first = True
             control_qubit = int(tokens[1][2:-2])
-            target_qubit = int(tokens[2][2:-2])  # Extract the last integer as the key
+            target_qubit = int(tokens[2][2:-2])
             if control_qubit not in control_target_pairs[i]:
                 control_target_pairs[i][control_qubit] = []
             control_target_pairs[i][control_qubit].append(target_qubit)
-            # print("CTP", control_target_pairs)
-            target_operation = tokens[0][1:]  # Extract the next character as the value
+            target_operation = tokens[0][1:]  # Stores the operation for the target qubit
             target_operations[i][target_qubit] = target_operation
-        elif line.startswith("id"):
+        elif line.startswith("id"):  # Lines with 'id' just continue to the next iteration
             flag = False
             first = True
             continue
-        elif line.startswith("barrier"):
+        elif line.startswith("barrier"):  # 'barrier' lines indicate separation between different parts of the circuit
             if not flag:
-                count+=1
-                i+=1
+                count += 1
+                i += 1
                 flag = True
-        else:
+        else:  # Handles other gates that are not conditional (non-control gates)
             flag = False
             first = True
             not_control[i] = True
             gate_qubit = int(tokens[1][2:-2])
             gate[i][tokens[0]] = gate_qubit
-            # print("gq", gate_qubit, gate)
+
+# Correct the count and index if the last barrier was at the file end
+if flag == True:
+    count -= 1
+    i -= 1
+        
+# Trim the lists to the number of slices actually processed
+control_target_pairs = control_target_pairs[:count + 1]
+target_operations = target_operations[:count + 1]
+gate = gate[:count + 1]
 
 
 if flag == True:
